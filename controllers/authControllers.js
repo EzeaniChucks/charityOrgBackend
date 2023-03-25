@@ -103,7 +103,7 @@ const login = async(req, res)=>{
         
         if(isPassCorrect){
             if(user.isVerified){
-               return res.status(200).json(user)
+               return res.status(200).json({ msg: "success", user });
             } else{
                return res.status(400).json({msg:'Please verify your email'})
             }

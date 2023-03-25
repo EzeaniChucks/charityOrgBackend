@@ -17,10 +17,10 @@ const port = 8080 || process.env.port
 const connect = async ()=>{
     try{
         await mongoose.connect(process.env.DB_CONNECTION);
-        // console.log('db connected')
-        app.listen(port, ()=>{
-            // console.log(`server connected to port ${port}`)
-        })
+        console.log("db connected");
+        app.listen(port, () => {
+          console.log(`server connected to port ${port}`);
+        });
     }catch(err){
         err.message? console.log(err.message): new Error('someting went wrong with db connection')
     }
