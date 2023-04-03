@@ -68,24 +68,35 @@ const register = async (req, res) => {
 };
 
 const verifyEmail = async (req, res) => {
-  const { verificationToken, email } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res
-      .status(400)
-      .json({ msg: "No user with this email. Please try registering" });
-  }
-
-  if (user.verificationToken !== verificationToken) {
-    return res.status(400).json({ msg: "false or expired token" });
-  }
-
-  user.isVerified = true;
-  user.verified = Date.now();
-  user.verificationToken = "";
   try {
+    const { verificationToken, email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ msg: "No user with this email. Please try registering" });
+    }
+
+    if (user.verificationToken !== verificationToken) {
+      return res.status(400).json({ msg: "false or expired token" });
+    }
+
+    user.isVerified = true;
+    user.verified = Date.now();
+    user.verificationToken = "";
     await user.save();
-    return res.status(200).json({ msg: "email verified", user });
+    const { _id, firstName, lastName, phoneNumber, isVerified } = user;
+    return res.status(200).json({
+      msg: "email verified",
+      user: {
+        _id,
+        email: user.email,
+        firstName,
+        lastName,
+        phoneNumber,
+        isVerified,
+      },
+    });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
@@ -109,7 +120,12 @@ const login = async (req, res) => {
 
     if (isPassCorrect) {
       if (user.isVerified) {
-        return res.status(200).json({ msg: "success", user });
+        const { _id, email, firstName, lastName, phoneNumber, isVerified } =
+          user;
+        return res.status(200).json({
+          msg: "success",
+          user: { _id, email, firstName, lastName, phoneNumber, isVerified },
+        });
       } else {
         return res.status(400).json({ msg: "Please verify your email" });
       }
@@ -121,18 +137,20 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = {login, register, verifyEmail}
+module.exports = { login, register, verifyEmail };
 
-
-
-// sendGridMail.setApiKey(process.env.SEND_API_KEY);
-// const msg = {
-//   to: "concordchucks2@gmail.com", // Change to your recipient
-//   from: "charityapplicationmail@gmail.com", // Change to your verified sender
-//   subject: "Sending with SendGrid is Fun",
-//   text: "and easy to do anywhere, even with Node.js",
-//   html: "<strong>and easy to do anywhere, even with Node.js</strong>",
-// };
-// const info = await sendGridMail.send(msg);
-// console.log(info);
-// console.log("email sent");
+cardNumber: 454845407;
+cvv: 457;
+dateOfBirth: "1991-03-25T15:08:59.000Z";
+email: "concordchucks2@gmail.com";
+expirationDate: "2023-03-25T15:08:59.000Z";
+firstName: "Young";
+isVerified: true;
+lastName: "D";
+password: "$2a$10$Ce5UsAOyijbkkja1/3DmZeW827tgVT07sB5hRDDV1h2sdAoyrSBh6";
+phoneNumber: 234;
+promoCode: "sfdsfsd";
+verificationToken: "";
+verified: "2023-03-25T15:13:58.039Z";
+__v: 0;
+_id: "641f0f77d0331a88b8e371f1";

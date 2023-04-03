@@ -1,0 +1,36 @@
+const mongoose = require("mongoose");
+
+const eventSchema = new mongoose.Schema({
+  creatorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: [true, "creator ID must be provided"],
+  },
+  eventName: {
+    type: String,
+    required: [true, "Event name must be provided"],
+    unique: true,
+  },
+  eventDate: { type: Date, required: [true, "Event date must be provided"] },
+  timeZone: { type: String, required: [true, "Time zone must be provided"] },
+  hostStatus: {
+    type: String,
+    required: [true, "Host status must be provided"],
+  },
+  currency: { type: String, required: [true, "Currency must be specified"] },
+  eventDescription: {
+    type: String,
+    required: [true, "Event description must be provided"],
+  },
+  depositDeadline: {
+    type: Date,
+    required: [true, "Deposit deadline must be provided"],
+  },
+  completionDeadline: {
+    type: Date,
+    required: [true, "Completion deadline must be provided"],
+  },
+  eventImageName: { type: String },
+  invitationEmails: [String],
+});
+
+module.exports = new mongoose.model("events", eventSchema);

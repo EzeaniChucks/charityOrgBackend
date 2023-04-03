@@ -2,14 +2,26 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require('cors');
 const authRouters = require('./routers/authRouters');
-require('dotenv').config();
+const eventRouters = require("./routers/eventRouters");
+const uploadImageRouter = require("./routers/uploadImageRouter");
+const fileupload = require("express-fileupload");
+const cloudinary = require("cloudinary").v2;
+require("dotenv").config();
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API,
+  api_secret: process.env.CLOUDINARY_SECRET,
+});
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
-app.use('/auth', authRouters)
+app.use(fileupload({ useTempFiles: true }));
+app.use("/auth", authRouters);
+app.use("/", eventRouters);
+app.use("/", uploadImageRouter);
 
 
 const port = 8080 || process.env.port
