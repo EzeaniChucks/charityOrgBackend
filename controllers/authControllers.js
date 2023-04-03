@@ -34,7 +34,7 @@ const register = async (req, res) => {
     const transporter = nodemailer.createTransport({
       host: "smtp.zoho.eu",
       port: 465,
-      secure: true, //ssl
+      secure: true,
       auth: {
         user: process.env.ZOHO_EMAIL,
         pass: process.env.ZOHO_PASSWORD,
@@ -52,7 +52,7 @@ const register = async (req, res) => {
 
     await transporter.sendMail({
       // from: '"charity Org" <charityapplicationmail@gmail.com>',
-      from: '"charity Org" <concordchucks2@zohomail.com>',
+      from: "concordchucks2@zohomail.com",
       to: `${user.email}`,
       subject: "CharityOrg: Account verification:",
       html: `
