@@ -32,19 +32,27 @@ const register = async (req, res) => {
         .json({ msg: "Something went wrong. Please try again" });
     }
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.zoho.eu",
+      port: 465,
+      secure: true, //ssl
       auth: {
-        type: "OAuth2",
-        user: process.env.USER,
-        pass: process.env.PASS,
-        clientId: process.env.CLIENT_ID,
-        clientSecret: process.env.CLIENT_SECRET,
-        refreshToken: process.env.REFRESH_TOKEN,
+        user: process.env.ZOHO_EMAIL,
+        pass: process.env.ZOHO_PASSWORD,
       },
+      // service: "gmail",
+      // auth: {
+      //   type: "OAuth2",
+      //   user: process.env.USER,
+      //   pass: process.env.PASS,
+      //   clientId: process.env.CLIENT_ID,
+      //   clientSecret: process.env.CLIENT_SECRET,
+      //   refreshToken: process.env.REFRESH_TOKEN,
+      // },
     });
 
     await transporter.sendMail({
-      from: '"charity Org" <charityapplicationmail@gmail.com>',
+      // from: '"charity Org" <charityapplicationmail@gmail.com>',
+      from: '"charity Org" <concordchucks2@zohomail.com>',
       to: `${user.email}`,
       subject: "CharityOrg: Account verification:",
       html: `
@@ -138,19 +146,3 @@ const login = async (req, res) => {
 };
 
 module.exports = { login, register, verifyEmail };
-
-cardNumber: 454845407;
-cvv: 457;
-dateOfBirth: "1991-03-25T15:08:59.000Z";
-email: "concordchucks2@gmail.com";
-expirationDate: "2023-03-25T15:08:59.000Z";
-firstName: "Young";
-isVerified: true;
-lastName: "D";
-password: "$2a$10$Ce5UsAOyijbkkja1/3DmZeW827tgVT07sB5hRDDV1h2sdAoyrSBh6";
-phoneNumber: 234;
-promoCode: "sfdsfsd";
-verificationToken: "";
-verified: "2023-03-25T15:13:58.039Z";
-__v: 0;
-_id: "641f0f77d0331a88b8e371f1";
