@@ -53,7 +53,7 @@ const register = async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: '"charity Org" <charityapplicationmail@gmail.com>',
+      from: '"charity Org" <newappaccess@gmail.com>',
       // from: "concordchucks2@zohomail.com",
       to: `${user.email}`,
       subject: "CharityOrg: Account verification:",
