@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
 const User = require('../schema/userSchema')
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const cryptos = require("crypto");
+const nodemailer = require("nodemailer");
+const nodemailgun = require("nodemailer-mailgun-transport");
 
 const register = async (req, res) => {
   const { password, phoneNumber, dateOfBirth, cvv, expirationDate } = req.body;
@@ -14,7 +15,7 @@ const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedpass = await bcrypt.hash(password, salt);
 
-    const verificationToken = crypto.randomBytes(40).toString("hex");
+    const verificationToken = cryptos.randomBytes(40).toString("hex");
 
     const user = await User.create({
       ...req.body,
@@ -31,28 +32,29 @@ const register = async (req, res) => {
         .status(400)
         .json({ msg: "Something went wrong. Please try again" });
     }
+
     const transporter = nodemailer.createTransport({
-      host: "smtp.zoho.eu",
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.ZOHO_EMAIL,
-        pass: process.env.ZOHO_PASSWORD,
-      },
-      // service: "gmail",
+      // host: "smtp.zoho.eu",
+      // port: 465,
+      // secure: true,
       // auth: {
-      //   type: "OAuth2",
-      //   user: process.env.USER,
-      //   pass: process.env.PASS,
-      //   clientId: process.env.CLIENT_ID,
-      //   clientSecret: process.env.CLIENT_SECRET,
-      //   refreshToken: process.env.REFRESH_TOKEN,
+      //   user: process.env.ZOHO_EMAIL,
+      //   pass: process.env.ZOHO_PASSWORD,
       // },
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: process.env.USER,
+        pass: process.env.PASS,
+        clientId: process.env.CLIENT_ID,
+        clientSecret: process.env.CLIENT_SECRET,
+        refreshToken: process.env.REFRESH_TOKEN,
+      },
     });
 
     await transporter.sendMail({
-      // from: '"charity Org" <charityapplicationmail@gmail.com>',
-      from: "concordchucks2@zohomail.com",
+      from: '"charity Org" <charityapplicationmail@gmail.com>',
+      // from: "concordchucks2@zohomail.com",
       to: `${user.email}`,
       subject: "CharityOrg: Account verification:",
       html: `
