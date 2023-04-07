@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../schema/userSchema')
 const cryptos = require("crypto");
+const { validateUserWallet } = require("./paymentcontroller");
 const nodemailer = require("nodemailer");
 const nodemailgun = require("nodemailer-mailgun-transport");
 
@@ -88,7 +89,11 @@ const verifyEmail = async (req, res) => {
     }
 
     if (user.verificationToken !== verificationToken) {
-      return res.status(400).json({ msg: "false or expired token" });
+      return res
+        .status(400)
+        .json({
+          msg: "false or expired token. Your account may already be verified. Try loggin in.",
+        });
     }
 
     user.isVerified = true;
@@ -96,6 +101,7 @@ const verifyEmail = async (req, res) => {
     user.verificationToken = "";
     await user.save();
     const { _id, firstName, lastName, phoneNumber, isVerified } = user;
+    await validateUserWallet(_id);
     return res.status(200).json({
       msg: "email verified",
       user: {
