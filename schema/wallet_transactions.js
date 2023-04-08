@@ -8,18 +8,26 @@ const walletTransactionSchema = new mongoose.Schema(
       required: true,
       ref: "user",
     },
-    isInflow:{type:Boolean, default:false},
-    paymentMethod:{type:String, default:'flutterwave'},
-    currency:{
-        type:String,
-        required:[true, "currency is required"],
-        enum:['NGN', 'USD', 'EUR', 'GBP']
+    isInflow: { type: Boolean, default: false },
+    paymentMethod: { type: String, default: "flutterwave" },
+    currency: {
+      type: String,
+      required: [true, "currency is required"],
+      enum: ["NGN", "USD", "EUR", "GBP"],
     },
-    status:{
-        type:String,
-        required:[true,"payment status is required"],
-        enum:['successful', 'pending', 'failed']
-    }
+    status: {
+      type: String,
+      required: [true, "payment status is required"],
+      enum: ["successful", "pending", "failed"],
+    },
+    description: {
+      type: String,
+      require: [true, "Transaction description is required"],
+    },
+    narration: {
+      type: String,
+      require: [true, "Transaction narration is required"],
+    },
   },
   { timestamps: true }
 );

@@ -7,7 +7,6 @@ const Transaction = require("../schema/transaction");
 
 //HELPER FUNCTION
 const validateUserWallet = async (userId) => {
-  console.log(userId);
   try {
     const userWallet = await Wallet.findOne({ userId });
     if (!userWallet) {
@@ -16,14 +15,22 @@ const validateUserWallet = async (userId) => {
     }
     return userWallet;
   } catch (err) {
-    return res
-      .status(500)
-      .json({ msg: "Something went wrong", log: err.message });
+    return res.status(500).json({
+      msg: "Something went wrong validating wallet",
+      log: err.message,
+    });
   }
 };
 
 //HELPER FUNCTION
-const createWalletTransactions = async (userId, status, currency, amount) => {
+const createWalletTransactions = async (
+  userId,
+  status,
+  currency,
+  amount,
+  description,
+  narration
+) => {
   try {
     const walletTransaction = await WalletTransaction.create({
       amount,
@@ -31,12 +38,15 @@ const createWalletTransactions = async (userId, status, currency, amount) => {
       isInflow: true,
       status,
       currency,
+      description,
+      narration,
     });
     return walletTransaction;
   } catch (err) {
-    return res
-      .status(500)
-      .json({ msg: "Something went wrong", log: err.message });
+    return res.status(500).json({
+      msg: "Something went wrong logging wallet transaction. Contact customer care",
+      log: err.message,
+    });
   }
 };
 
@@ -48,7 +58,9 @@ const createTransaction = async (
   currency,
   amount,
   customer,
-  tx_ref
+  tx_ref,
+  description,
+  narration
 ) => {
   try {
     const transaction = Transaction.create({
@@ -62,12 +74,15 @@ const createTransaction = async (
       tx_ref,
       paymentStatus: status,
       paymentGateway: "flutterwave",
+      description,
+      narration,
     });
     return transaction;
   } catch (err) {
-    return res
-      .status(500)
-      .json({ msg: "Something went wrong", log: err.message });
+    return res.status(500).json({
+      msg: "Something went wrong creating transaction. Contact customer care",
+      log: err.message,
+    });
   }
 };
 
@@ -81,15 +96,16 @@ const updateWallet = async (userId, amount) => {
     );
     return wallet;
   } catch (err) {
-    return res
-      .status(500)
-      .json({ msg: "Something went wrong", log: err.message });
+    return res.status(500).json({
+      msg: "Something went wrong updating wallet. Contact customer care",
+      log: err.message,
+    });
   }
 };
 
 //ENDPOINT
 const paymentresponse = async (req, res) => {
-  const { transaction_id } = req.query;
+  const { transaction_id, description } = req.query;
 
   const url = `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`;
   try {
@@ -104,7 +120,7 @@ const paymentresponse = async (req, res) => {
       },
     });
     //get relevant data from response
-    const { status, currency, id, amount, customer, tx_ref } =
+    const { status, currency, id, amount, customer, tx_ref, narration } =
       response.data.data;
 
     //Check if transact. Id already exists to avoid topping up wallet with mere frontend page refresh
@@ -114,8 +130,20 @@ const paymentresponse = async (req, res) => {
     }
 
     const user = await User.findOne({ email: customer.email });
+    if (!user) {
+      return res.status(409).json({
+        msg: "Unathorized Access. Something went wrong. Please contact customer care.",
+      });
+    }
     await validateUserWallet(user._id);
-    await createWalletTransactions(user._id, status, currency, amount);
+    await createWalletTransactions(
+      user._id,
+      status,
+      currency,
+      amount,
+      description,
+      narration
+    );
     await createTransaction(
       user._id,
       id,
@@ -123,11 +151,15 @@ const paymentresponse = async (req, res) => {
       currency,
       amount,
       customer,
-      tx_ref
+      tx_ref,
+      description,
+      narration
     );
     const wallet = await updateWallet(user._id, amount);
 
-    return res.status(200).json({ msg: "Wallet funded successfully", wallet });
+    return res
+      .status(200)
+      .json({ msg: "Wallet funded successfully", balance: wallet.balance });
   } catch (err) {
     return res
       .status(500)
@@ -152,8 +184,25 @@ const getUserBalance = async (req, res) => {
       .json({ msg: "Something went wrong", log: err.message });
   }
 };
+
+const latestTransactions = async (req, res) => {
+  const { userId } = req.body;
+
+  const lastTen = await WalletTransaction.find({ userId })
+    .limit(10)
+    .sort("-createdAt");
+
+  if (lastTen.length === 0)
+    return res.status(400).json({ msg: "Transactions failed to fetched" });
+  else
+    return res
+      .status(200)
+      .json({ msg: "success", latestTransactions: lastTen });
+};
+
 module.exports = {
   paymentresponse,
   getUserBalance,
   validateUserWallet,
+  latestTransactions,
 };

@@ -13,7 +13,7 @@ const transactionSchema = new mongoose.Schema(
     },
     tx_ref: {
       type: String,
-      required:[true, 'Transaction reference is required'],
+      required: [true, "Transaction reference is required"],
       trim: true,
     },
     name: {
@@ -32,19 +32,27 @@ const transactionSchema = new mongoose.Schema(
       required: [true, "amount is required"],
     },
     currency: {
-        type: String,
-        required: [true, "currency is required"],
-        enum: ["NGN", "USD", "EUR", "GBP"],
+      type: String,
+      required: [true, "currency is required"],
+      enum: ["NGN", "USD", "EUR", "GBP"],
     },
     paymentStatus: {
-        type: String,
-        enum: ["successful", "pending", "failed"],
-        default:"pending"
+      type: String,
+      enum: ["successful", "pending", "failed"],
+      default: "pending",
     },
     paymentGateway: {
-        type: String,
-        required: [true, "payment gateway is required"],
-        enum:["flutterwave"]
+      type: String,
+      required: [true, "payment gateway is required"],
+      enum: ["flutterwave"],
+    },
+    description: {
+      type: String,
+      require: [true, "Transaction description is required"],
+    },
+    narration: {
+      type: String,
+      require: [true, "Transaction narration is required"],
     },
   },
   { timestamps: true }
