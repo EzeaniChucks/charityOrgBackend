@@ -29,6 +29,17 @@ const eventSchema = new mongoose.Schema({
     type: Date,
     required: [true, "Completion deadline must be provided"],
   },
+  members: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+      membertype: {
+        type: String,
+        default: "depositor",
+        enum: ["depositor", "observer"],
+      },
+      isCreator: { type: Boolean, default: false },
+    },
+  ],
   eventImageName: { type: String },
   invitationEmails: [String],
 });

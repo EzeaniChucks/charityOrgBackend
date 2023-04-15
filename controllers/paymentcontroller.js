@@ -123,7 +123,7 @@ const paymentresponse = async (req, res) => {
     const { status, currency, id, amount, customer, tx_ref, narration } =
       response.data.data;
 
-    //Check if transact. Id already exists to avoid topping up wallet with mere frontend page refresh
+    //Check if transaction Id already exists to avoid topping up wallet with mere frontend page refresh
     const transactionExists = await Transaction.findOne({ transactionId: id });
     if (transactionExists) {
       return res.status(409).json({ msg: "Transaction already exists" });
@@ -184,7 +184,7 @@ const getUserBalance = async (req, res) => {
       .json({ msg: "Something went wrong", log: err.message });
   }
 };
-
+//ENDPOINT
 const latestTransactions = async (req, res) => {
   const { userId } = req.body;
 
@@ -205,4 +205,6 @@ module.exports = {
   getUserBalance,
   validateUserWallet,
   latestTransactions,
+  createTransaction,
+  createWalletTransactions,
 };
