@@ -94,6 +94,15 @@ const joinEvent = async (req, res) => {
       .json({ msg: "event Id and user Id must be present" });
   }
   try {
+    const memberExists = await Event.findOne({
+      _id: eventId,
+      members: { $elemMatch: userId },
+    });
+    if (memberExists) {
+      return res.status(400).json({
+        msg: "You are already part of this event. Refresh page to see open event button",
+      });
+    }
     const update = await Event.findOneAndUpdate(
       { _id: eventId },
       { $push: { members: { userId } } },
