@@ -14,45 +14,56 @@ const cloudinary = require("cloudinary").v2;
 
 const createEvent = async (req, res) => {
   req.files.document.mv(
-    path.join(__dirname, `../tmp/${req.files.document.name}`)
-  );
-  readFile(
     path.join(__dirname, `../tmp/${req.files.document.name}`),
-    async (err, data) => {
-      if (err) console.log(err);
-      try {
-        const event = await Event.create(JSON.parse(data.toString()));
-        if (!event) {
-          return res
-            .status(400)
-            .json({ msg: "Something went wrong. Try again" });
-        }
+    (err) => {
+      err
+        ? res.status(400).json({ msg: "Something went wrong" })
+        : readFile(
+            path.join(__dirname, `../tmp/${req.files.document.name}`),
+            async (err, data) => {
+              if (err) res.status(400).json({ msg: "Something went wrong" });
+              try {
+                const event = await Event.create(JSON.parse(data.toString()));
+                if (!event) {
+                  return res
+                    .status(400)
+                    .json({ msg: "Something went wrong. Try again" });
+                }
 
-        await EventDetail.create({ eventId: event._id });
+                await EventDetail.create({
+                  eventId: event?._id,
+                  eventName: event?.eventName,
+                });
 
-        event.members.push({
-          userId: event.creatorId,
-          membertype: event.hostStatus.toLowerCase(),
-          isCreator: true,
-        });
-        await event.save();
+                event.members.push({
+                  userId: event.creatorId,
+                  membertype: event.hostStatus.toLowerCase(),
+                  isCreator: true,
+                });
+                await event.save();
 
-        if (req.files.image) {
-          const img = req.files.image;
-          const result = await cloudinary.uploader.upload(img.tempFilePath, {
-            use_filename: true,
-            folder: "charity_events_img",
-          });
-          event.eventImageName = result.secure_url;
-          await event.save();
-          unlink(req.files.image.tempFilePath, () => {});
-        }
+                if (req.files.image) {
+                  const img = req.files.image;
+                  const result = await cloudinary.uploader.upload(
+                    img.tempFilePath,
+                    {
+                      use_filename: true,
+                      folder: "charity_events_img",
+                    }
+                  );
+                  event.eventImageName = result.secure_url;
+                  await event.save();
+                  unlink(req.files.image.tempFilePath, () => {});
+                }
 
-        unlink(req.files.document.tempFilePath, () => {});
-        return res.status(200).json({ msg: "Success", event });
-      } catch (err) {
-        return res.status(500).json({ msg: err.message });
-      }
+                unlink(req.files.document.tempFilePath, () => {
+                  return res.status(200).json({ msg: "Success", event });
+                });
+              } catch (err) {
+                return res.status(500).json({ msg: err.message });
+              }
+            }
+          );
     }
   );
 };
@@ -96,11 +107,11 @@ const joinEvent = async (req, res) => {
   try {
     const memberExists = await Event.findOne({
       _id: eventId,
-      members: { $elemMatch: userId },
+      members: { $elemMatch: { userId } },
     });
     if (memberExists) {
       return res.status(400).json({
-        msg: "You are already part of this event. Refresh page to see open event button",
+        msg: "You are already part of this event. Refresh page to see 'Open Event' button",
       });
     }
     const update = await Event.findOneAndUpdate(
@@ -119,6 +130,21 @@ const joinEvent = async (req, res) => {
 
 const fetchEventDetails = async (req, res) => {
   const { eventId } = req.params;
+  // await req.io.on("connection", async (socket) => {
+  //   // console.log(`This user ${socket.id} is live`);
+
+  //   await socket.on(eventId, async (data) => {
+  //     await socket.emit(
+  //       "response",
+  //       `think you are connected. I received this data: ${data}`
+  //     );
+  //   });
+
+  //   await socket.on("disconnect", () => {
+  //     console.log(`A user disconnected`);
+  //   });
+  //   socket.removeAllListeners("connection");
+  // });
   if (!eventId) {
     return res.status(400).json({
       msg: "Event Id must be present. Please contact customer support",
@@ -135,6 +161,7 @@ const fetchEventDetails = async (req, res) => {
   const completeDetail = {
     _id: detail._id,
     eventId: detail.eventId,
+    eventName: detail.eventName,
     memberCategories: detail.memberCategories,
     totalEventAmount: detail.totalEventAmount,
     memberRequests: detail.memberRequests,
@@ -352,50 +379,108 @@ const getmembersRequestList = async (req, res) => {
     return res.status(500).json({ msg: err.message });
   }
 };
-const deleteMemberRequest = async (req, res) => {
-  const { userId, eventId } = req.body;
-  try {
-    const eventMemberAmount = await EventDetail.findOne({ eventId }).select({
-      memberRequests: { $elemMatch: { userId } },
-    });
-    console.log(eventMemberAmount);
-    // const eventDet = await EventDetail.findOneAndUpdate(
-    //   { eventId },
-    //   { $pull: { memberRequests: { userId } } },
-    //   { new: true }
-    // );
-
-    // res.status(200).json({ msg: "success", eventDet });
-  } catch (err) {
-    return res.status(500).json({ msg: err.message });
-  }
-};
 
 const editMemberRequest = async (req, res) => {
-  const { userId, eventId, name, description, amount } = req.body;
-  const info = {
-    userId,
-    name,
-    description,
-    amount,
-    date: Date.now(),
-  };
+  const { userId, eventId, amount, requestOwnerId, name, description } =
+    req.body;
+
+  if (userId !== requestOwnerId) {
+    return res.status(400).json({ msg: "Forbidden request" });
+  }
+
   try {
-    // const eventDetails = await EventDetail.findOne({eventId, memberRequests:{$elemMatch:{userId}}});
-    // if(!eventDetails){
-    //   return res.status(400).json({ msg: 'event could not be edited. Try again or contact customer support' });
-    // }
+    const eventDetail = await EventDetail.findOne({ eventId });
+    if (!eventDetail) {
+      return res
+        .status(400)
+        .json({ msg: "Something went wrong. Please try again" });
+    }
+
+    //find a single user request object to pull out the user's amount contributed
+    const userExists = await EventDetail.findOne(
+      { eventId: eventId },
+      { memberRequests: { $elemMatch: { userId: requestOwnerId } } }
+    );
+
+    //update total amount on main event object
+    eventDetail.totalMemberRequestsAmount -=
+      userExists.memberRequests[0].amount;
+    await eventDetail.save();
+
+    const info = {
+      userId: requestOwnerId,
+      amount,
+      name,
+      description,
+      date: userExists.memberRequests[0].date,
+    };
     const eventDet = await EventDetail.findOneAndUpdate(
-      { eventId, "memberRequests.userId": userId },
+      { eventId, "memberRequests.userId": requestOwnerId },
       { $set: { "memberRequests.$": info } },
       { new: true }
     );
-    return res.status(200).json({ msg: "success", eventDet });
+
+    if (!eventDet) {
+      return res
+        .status(400)
+        .json({ msg: "Something went wrong. Please try again" });
+    }
+    eventDetail.totalMemberRequestsAmount += Number(amount);
+    await eventDetail.save();
+    return res.status(200).json({
+      msg: "success",
+      memberRequests: eventDetail.memberRequests,
+      totalMemberRequestsAmount: eventDetail.totalMemberRequestsAmount,
+    });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
 };
+const deleteMemberRequest = async (req, res) => {
+  const { userId, eventId, requestOwnerId } = req.body;
 
+  if (userId !== requestOwnerId) {
+    return res.status(400).json({ msg: "Forbidden request" });
+  }
+
+  try {
+    const eventDetail = await EventDetail.findOne({ eventId });
+    if (!eventDetail) {
+      return res
+        .status(400)
+        .json({ msg: "Something went wrong. Please try again herre" });
+    }
+
+    //find a single user request object to pull out the user's amount contributed
+    const userExists = await EventDetail.findOne(
+      { eventId: eventId },
+      { memberRequests: { $elemMatch: { userId: requestOwnerId } } }
+    );
+
+    //update total amount on main event object
+    eventDetail.totalMemberRequestsAmount -=
+      userExists.memberRequests[0].amount;
+    await eventDetail.save();
+
+    const eventDet = await EventDetail.findOneAndUpdate(
+      { eventId },
+      { $pull: { memberRequests: { userId: requestOwnerId } } },
+      { new: true }
+    );
+    if (!eventDet) {
+      return res
+        .status(400)
+        .json({ msg: "Something went wrong. Please try again2" });
+    }
+    return res.status(200).json({
+      msg: "success",
+      memberRequests: eventDetail.memberRequests,
+      totalMemberRequestsAmount: eventDetail.totalMemberRequestsAmount,
+    });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
 module.exports = {
   createEvent,
   fetchAllEvents,

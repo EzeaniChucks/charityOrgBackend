@@ -22,8 +22,8 @@ router.route("/join_event").post(joinEvent);
 router.route("/:eventId/get_event_details").get(fetchEventDetails);
 router.route("/accept_event_deposit").post(acceptEventDeposit);
 router.route("/upload_member_request").post(addMemberRequest);
-router.route("/edit_member_request").delete(deleteMemberRequest);
-router.route("/delete_member_request").put(editMemberRequest);
+router.route("/delete_member_request").delete(deleteMemberRequest);
+router.route("/edit_member_request").put(editMemberRequest);
 router.route("/get_member_request_list/:eventId").get(getmembersRequestList);
 
 module.exports = router;

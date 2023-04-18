@@ -38,6 +38,7 @@ const eventSchema = new mongoose.Schema({
         enum: ["depositor", "observer"],
       },
       isCreator: { type: Boolean, default: false },
+      isAdmin: { type: Boolean, default: false },
     },
   ],
   eventImageName: { type: String },

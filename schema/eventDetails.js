@@ -5,6 +5,7 @@ const eventDetailsSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: [true, "event ID must be provided"],
   },
+  eventName: { type: String },
   memberCategories: [
     {
       description: String,
