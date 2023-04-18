@@ -4,10 +4,11 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const authRouters = require("./routers/authRouters");
-const eventRouters = require("./routers/eventRouters");
+const eventRoute = require("./routers/eventRouters");
 const WalletRouter = require("./routers/walletRouter");
 const uploadImageRouter = require("./routers/uploadImageRouter");
 const notifRouter = require("./routers/notificationRouter");
+const disputeRoute = require("./routers/disputeRouter");
 
 const fileupload = require("express-fileupload");
 const cloudinary = require("cloudinary").v2;
@@ -45,10 +46,11 @@ const connect = async () => {
       next();
     });
     app.use("/auth", authRouters);
-    app.use("/", eventRouters);
+    app.use("/", eventRoute);
     app.use("/", uploadImageRouter);
     app.use("/", WalletRouter);
     app.use("/", notifRouter);
+    app.use("/", disputeRoute);
   } catch (err) {
     err.message
       ? console.log(err.message)

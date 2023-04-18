@@ -7,6 +7,8 @@ const buildGroupNotificationArray = ({
   message,
   link,
   userId,
+  frontEndObjectId,
+  type,
 }) => {
   return memberArray.reduce((total, item) => {
     if (item?.userId.toString() === userId) return total;
@@ -14,6 +16,8 @@ const buildGroupNotificationArray = ({
       recipientId: item.userId,
       message,
       link,
+      frontEndObjectId,
+      type,
     };
     total.push(data);
     return total;
@@ -21,7 +25,7 @@ const buildGroupNotificationArray = ({
 };
 
 const log_notification = async (req, res) => {
-  const { message, userId, link, eventId } = req.body;
+  const { message, userId, link, eventId, type, frontEndObjectId } = req.body;
   //if a user does something, get all the members of that event. Attach their Ids as recicipientIds
   //to each notification. P0pulate notification server at once with this data.
   try {
@@ -29,9 +33,11 @@ const log_notification = async (req, res) => {
     //blocking code below
     const array = buildGroupNotificationArray({
       memberArray: event.members,
+      frontEndObjectId,
       message,
       link,
       userId,
+      type,
     });
     // console.log(array)
 

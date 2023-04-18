@@ -31,6 +31,7 @@ const eventDetailsSchema = new mongoose.Schema({
     },
   ],
   totalMemberRequestsAmount: { type: Number, default: 0 },
+  disputes: [{ type: mongoose.Schema.Types.ObjectId }],
 });
 
 module.exports = new mongoose.model("eventDetails", eventDetailsSchema);
