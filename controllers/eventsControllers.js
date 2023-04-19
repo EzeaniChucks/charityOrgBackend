@@ -168,6 +168,7 @@ const fetchEventDetails = async (req, res) => {
     totalMemberRequestsAmount: detail.totalMemberRequestsAmount,
     completionDeadline: event.completionDeadline,
     depositDeadline: event.depositDeadline,
+    eventParticipantNumber: event.members.length,
   };
   return res.status(200).json({ msg: "success", eventDetail: completeDetail });
 };
@@ -370,10 +371,12 @@ const getmembersRequestList = async (req, res) => {
     if (!eventDet) {
       res.status(400).json({ msg: "Something went wrong" });
     }
+    const event = await Event.findOne({ _id: eventId });
     return res.status(200).json({
       msg: "success",
       memberRequests: eventDet.memberRequests,
       totalMemberRequestsAmount: eventDet.totalMemberRequestsAmount,
+      eventParticipantNumber: event.members.length,
     });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
