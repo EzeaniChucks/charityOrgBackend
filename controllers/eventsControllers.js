@@ -99,11 +99,97 @@ const fetchEventCreatorDetails = async (req, res) => {
 
 const joinEvent = async (req, res) => {
   const { eventId, userId } = req.body;
+
   if (!eventId || !userId) {
     return res
       .status(400)
       .json({ msg: "event Id and user Id must be present" });
   }
+
+  // const io = req.app.get("socketio");
+  // io.on(eventId, function (data) {
+  //   io.emit("response", `You are connected. I received this data: ${data}`);
+  // });
+
+  // on("connection", function (socket) {
+  //   console.log(`This user ${socket.id} is live from index`);
+  //   socket.on(eventId, function (data) {
+  //     socket.emit(
+  //       "response",
+  //       `You are connected. I received this data: ${data}`
+  //     );
+  //   });
+  //   socket.on("disconnect", function () {
+  //     console.log(`This user ${socket.id} disconnected`);
+  //   });
+  // });
+
+  try {
+    const memberExists = await Event.findOne({
+      _id: eventId,
+      members: { $elemMatch: { userId } },
+    });
+    if (memberExists) {
+      return res.status(400).json({
+        msg: "You are already part of this event. Refresh page to see 'Open Event' button",
+      });
+    }
+    const update = await Event.findOneAndUpdate(
+      { _id: eventId },
+      { $push: { members: { userId } } },
+      { new: true }
+    );
+    if (!update) {
+      return res.status(400).json({ msg: "Something went wrong" });
+    }
+    return res.status(200).json({ msg: "success" });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
+
+const joinEventAsObserver = async (req, res) => {
+  const { eventId, userId } = req.body;
+
+  if (!eventId || !userId) {
+    return res
+      .status(400)
+      .json({ msg: "event Id and user Id must be present" });
+  }
+
+  try {
+    const memberExists = await Event.findOne({
+      _id: eventId,
+      observers: { $elemMatch: { userId } },
+    });
+    if (memberExists) {
+      return res.status(400).json({
+        msg: "You are already part of this event. Refresh page to see 'Open Event' button",
+      });
+    }
+    const update = await Event.findOneAndUpdate(
+      { _id: eventId },
+      { $push: { observers: { userId } } },
+      { new: true }
+    );
+    if (!update) {
+      return res.status(400).json({ msg: "Something went wrong" });
+    }
+    return res.status(200).json({ msg: "success" });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
+
+const leaveEvent = async (req, res) => {
+  const { eventId, userId } = req.body;
+
+  if (!eventId || !userId) {
+    return res
+      .status(400)
+      .json({ msg: "event Id and user Id must be present" });
+  }
+
   try {
     const memberExists = await Event.findOne({
       _id: eventId,
@@ -130,21 +216,7 @@ const joinEvent = async (req, res) => {
 
 const fetchEventDetails = async (req, res) => {
   const { eventId } = req.params;
-  // await req.io.on("connection", async (socket) => {
-  //   // console.log(`This user ${socket.id} is live`);
 
-  //   await socket.on(eventId, async (data) => {
-  //     await socket.emit(
-  //       "response",
-  //       `think you are connected. I received this data: ${data}`
-  //     );
-  //   });
-
-  //   await socket.on("disconnect", () => {
-  //     console.log(`A user disconnected`);
-  //   });
-  //   socket.removeAllListeners("connection");
-  // });
   if (!eventId) {
     return res.status(400).json({
       msg: "Event Id must be present. Please contact customer support",
@@ -484,15 +556,37 @@ const deleteMemberRequest = async (req, res) => {
     return res.status(500).json({ msg: err.message });
   }
 };
+const getMembersAndObservers = async (req, res) => {
+  const { eventId } = req.params;
+
+  try {
+    const event = await Event.findOne({ _id: eventId });
+    if (!event) {
+      return res
+        .status(400)
+        .json({ msg: "Something went wrong. Could not get event" });
+    }
+    return res.status(200).json({
+      msg: "successful",
+      members: event.members,
+      observers: event.observers,
+    });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
+const nominateObserverAsJudge = () => {};
 module.exports = {
   createEvent,
   fetchAllEvents,
   fetchEventCreatorDetails,
   joinEvent,
+  joinEventAsObserver,
   fetchEventDetails,
   acceptEventDeposit,
   addMemberRequest,
   deleteMemberRequest,
   editMemberRequest,
   getmembersRequestList,
+  getMembersAndObservers,
 };

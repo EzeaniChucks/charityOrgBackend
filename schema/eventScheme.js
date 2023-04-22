@@ -35,8 +35,19 @@ const eventSchema = new mongoose.Schema({
       membertype: {
         type: String,
         default: "depositor",
-        enum: ["depositor", "observer"],
       },
+      isCreator: { type: Boolean, default: false },
+      isAdmin: { type: Boolean, default: false },
+    },
+  ],
+  observers: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+      membertype: {
+        type: String,
+        default: "observer",
+      },
+      nominations: Number,
       isCreator: { type: Boolean, default: false },
       isAdmin: { type: Boolean, default: false },
     },
