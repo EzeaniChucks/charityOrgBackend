@@ -12,6 +12,7 @@ const {
   getmembersRequestList,
   joinEventAsObserver,
   getMembersAndObservers,
+  logDisputeForm,
 } = require("../controllers/eventsControllers");
 const { imageSave } = require("../controllers/imageSaveController");
 const router = express.Router();
@@ -29,5 +30,6 @@ router.route("/delete_member_request").delete(deleteMemberRequest);
 router.route("/edit_member_request").put(editMemberRequest);
 router.route("/get_member_request_list/:eventId").get(getmembersRequestList);
 router.route("/get_members_and_obervers/:eventId").get(getMembersAndObservers);
+router.route("/log_dispute_form").post(logDisputeForm);
 
 module.exports = router;

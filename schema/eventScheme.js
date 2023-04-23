@@ -32,6 +32,7 @@ const eventSchema = new mongoose.Schema({
   members: [
     {
       userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+      name: String,
       membertype: {
         type: String,
         default: "depositor",
@@ -43,6 +44,7 @@ const eventSchema = new mongoose.Schema({
   observers: [
     {
       userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+      name: String,
       membertype: {
         type: String,
         default: "observer",

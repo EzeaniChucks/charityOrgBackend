@@ -98,7 +98,7 @@ const fetchEventCreatorDetails = async (req, res) => {
 };
 
 const joinEvent = async (req, res) => {
-  const { eventId, userId } = req.body;
+  const { eventId, userId, name } = req.body;
 
   if (!eventId || !userId) {
     return res
@@ -136,7 +136,7 @@ const joinEvent = async (req, res) => {
     }
     const update = await Event.findOneAndUpdate(
       { _id: eventId },
-      { $push: { members: { userId } } },
+      { $push: { members: { userId, name } } },
       { new: true }
     );
     if (!update) {
@@ -149,7 +149,7 @@ const joinEvent = async (req, res) => {
 };
 
 const joinEventAsObserver = async (req, res) => {
-  const { eventId, userId } = req.body;
+  const { eventId, userId, name } = req.body;
 
   if (!eventId || !userId) {
     return res
@@ -169,7 +169,7 @@ const joinEventAsObserver = async (req, res) => {
     }
     const update = await Event.findOneAndUpdate(
       { _id: eventId },
-      { $push: { observers: { userId } } },
+      { $push: { observers: { userId, name } } },
       { new: true }
     );
     if (!update) {
@@ -238,6 +238,7 @@ const fetchEventDetails = async (req, res) => {
     totalEventAmount: detail.totalEventAmount,
     memberRequests: detail.memberRequests,
     totalMemberRequestsAmount: detail.totalMemberRequestsAmount,
+    disputeForms: detail.disputeForms,
     completionDeadline: event.completionDeadline,
     depositDeadline: event.depositDeadline,
     eventParticipantNumber: event.members.length,
@@ -576,6 +577,86 @@ const getMembersAndObservers = async (req, res) => {
   }
 };
 const nominateObserverAsJudge = () => {};
+
+const logDisputeForm = async (req, res) => {
+  const {
+    disputeLogger,
+    description,
+    disputedRequests,
+    appointedJudge,
+    eventId,
+  } = req.body;
+  if (
+    !description ||
+    disputedRequests?.length == 0 ||
+    !appointedJudge ||
+    !disputeLogger
+  ) {
+    return res.status(400).json({
+      msg: "Dispute decription, dispute requests and appointed judge must be present",
+    });
+  }
+  try {
+    const eventDetail = await EventDetail.findOne({ eventId });
+    if (!eventDetail) {
+      return res
+        .status(200)
+        .json({ msg: "Sonething went wrong. Could not get events" });
+    }
+    const lodgerExists = await EventDetail.findOne({
+      eventId,
+      disputeForms: { $elemMatch: { disputeLogger } },
+    });
+    if (lodgerExists) {
+      return res.status(400).json({
+        msg: "You already submitted a dispute form to this event. Scroll below to see your form for necessary edits",
+      });
+    }
+    const eventJudgeExists = await Event.findOne({
+      _id: eventId,
+      observers: { $elemMatch: { userId: appointedJudge.userId } },
+    });
+    if (!eventJudgeExists) {
+      return res
+        .status(200)
+        .json({ msg: "Something went wrong. Could not get event Judge" });
+    }
+    const updateSuccess = await Event.findOneAndUpdate(
+      {
+        _id: eventId,
+        "observers.userId": appointedJudge.userId,
+      },
+      {
+        $inc: {
+          "observers.$.nominations": 1,
+        },
+      },
+      { new: true }
+    );
+    if (!updateSuccess) {
+      return res
+        .status(200)
+        .json({
+          msg: "Something went wrong. Could not update Judge's nominations",
+        });
+    }
+    const data = {
+      disputeLogger,
+      description,
+      disputedRequests,
+      appointedJudge, //{ userId: mongoose.Schema.Types.ObjectId, name: String },
+      createdAt: Date.now(),
+    };
+    eventDetail?.disputeForms?.push(data);
+    await eventDetail.save();
+    return res
+      .status(200)
+      .json({ msg: "successful", disputeForms: eventDetail.disputeForms });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
+
 module.exports = {
   createEvent,
   fetchAllEvents,
@@ -589,4 +670,5 @@ module.exports = {
   editMemberRequest,
   getmembersRequestList,
   getMembersAndObservers,
+  logDisputeForm,
 };

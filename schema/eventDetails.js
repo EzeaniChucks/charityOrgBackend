@@ -32,6 +32,15 @@ const eventDetailsSchema = new mongoose.Schema({
     },
   ],
   totalMemberRequestsAmount: { type: Number, default: 0 },
+  disputeForms: [
+    {
+      disputeLogger: mongoose.Schema.Types.ObjectId,
+      description: { type: String, required: true },
+      disputedRequests: Array,
+      appointedJudge: { userId: mongoose.Schema.Types.ObjectId, name: String },
+      createdAt: Date,
+    },
+  ],
 });
 
 module.exports = new mongoose.model("eventDetails", eventDetailsSchema);
