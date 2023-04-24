@@ -596,12 +596,89 @@ const logDisputeForm = async (req, res) => {
       msg: "Dispute decription, dispute requests and appointed judge must be present",
     });
   }
+  const makeObject = () => {
+    let result = {};
+    let alphabeth = [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "k",
+      "l",
+      "m",
+      "n",
+      "o",
+      "p",
+      "q",
+      "r",
+      "s",
+      "t",
+      "u",
+      "v",
+      "w",
+      "x",
+      "y",
+      "z",
+    ];
+    disputedRequests.map((_, i) => {
+      return (result[
+        `memberRequests.$[${alphabeth[i]}${alphabeth[i]}].disputeFormDescription`
+      ] = { userId: disputeLogger, description });
+    });
+    return result;
+  };
+
+  const makeArray = () => {
+    let arr = [];
+
+    let alphabeth = [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "k",
+      "l",
+      "m",
+      "n",
+      "o",
+      "p",
+      "q",
+      "r",
+      "s",
+      "t",
+      "u",
+      "v",
+      "w",
+      "x",
+      "y",
+      "z",
+    ];
+    disputedRequests.map((item, i) => {
+      let obj = {};
+      obj[`${alphabeth[i]}${alphabeth[i]}.userId`] = `${item.userId}`;
+      return arr.push(obj);
+    });
+    return arr;
+  };
+  // console.log(makeArray());
   try {
     const eventDetail = await EventDetail.findOne({ eventId });
     if (!eventDetail) {
       return res
         .status(200)
-        .json({ msg: "Sonething went wrong. Could not get events" });
+        .json({ msg: "Something went wrong. Could not get events" });
     }
     const lodgerExists = await EventDetail.findOne({
       eventId,
@@ -621,7 +698,8 @@ const logDisputeForm = async (req, res) => {
         .status(200)
         .json({ msg: "Something went wrong. Could not get event Judge" });
     }
-    const updateSuccess = await Event.findOneAndUpdate(
+
+    const updateJudgeNomination = await Event.findOneAndUpdate(
       {
         _id: eventId,
         "observers.userId": appointedJudge.userId,
@@ -633,13 +711,25 @@ const logDisputeForm = async (req, res) => {
       },
       { new: true }
     );
-    if (!updateSuccess) {
-      return res
-        .status(200)
-        .json({
-          msg: "Something went wrong. Could not update Judge's nominations",
-        });
+    if (!updateJudgeNomination) {
+      return res.status(200).json({
+        msg: "Something went wrong. Could not update Judge's nominations",
+      });
     }
+
+    //move dispute description into disputeFormDescription(userId, description) of member requests
+    const updateConcernedRequestDisputeDescription =
+      await EventDetail.updateOne(
+        { eventId },
+        { $push: makeObject() },
+        { arrayFilters: makeArray(), new: true }
+      );
+    if (!updateConcernedRequestDisputeDescription) {
+      return res.status(400).json({
+        msg: "Could not update requests with dispute description field. Please contact customer support",
+      });
+    }
+
     const data = {
       disputeLogger,
       description,
@@ -649,6 +739,7 @@ const logDisputeForm = async (req, res) => {
     };
     eventDetail?.disputeForms?.push(data);
     await eventDetail.save();
+
     return res
       .status(200)
       .json({ msg: "successful", disputeForms: eventDetail.disputeForms });
