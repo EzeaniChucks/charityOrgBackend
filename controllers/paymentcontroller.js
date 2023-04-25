@@ -4,7 +4,7 @@ const User = require("../schema/userSchema");
 const Wallet = require("../schema/wallet");
 const WalletTransaction = require("../schema/wallet_transactions");
 const Transaction = require("../schema/transaction");
-
+const Flutterwave = require("flutterwave-node-v3");
 //HELPER FUNCTION
 const validateUserWallet = async (userId) => {
   try {
@@ -107,21 +107,27 @@ const updateWallet = async (userId, amount) => {
 const paymentresponse = async (req, res) => {
   const { transaction_id, description } = req.query;
 
-  const url = `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`;
+  const flw = new Flutterwave(
+    "FLWPUBK_TEST-31f261f02a971b32bd56cf4deff5e74a-X",
+    `${process.env.FLUTTERWAVE_V3_SECRET_KEY}`
+  );
+  const response = await flw.Transaction.verify({ id: `${transaction_id}` });
+  // const url = `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`;
+
   try {
     //query flutterwave to see if transaction took place
-    const response = await axios({
-      url,
-      method: "get",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `${process.env.FLUTTERWAVE_V3_SECRET_KEY}`,
-      },
-    });
+    // const response = await axios({
+    //   url,
+    //   method: "get",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     Accept: "application/json",
+    //     Authorization: `${process.env.FLUTTERWAVE_V3_SECRET_KEY}`,
+    //   },
+    // });
     //get relevant data from response
     const { status, currency, id, amount, customer, tx_ref, narration } =
-      response.data.data;
+      response.data;
 
     //Check if transaction Id already exists to avoid topping up wallet with mere frontend page refresh
     const transactionExists = await Transaction.findOne({ transactionId: id });
