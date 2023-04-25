@@ -10,7 +10,10 @@ const eventSchema = new mongoose.Schema({
     required: [true, "Event name must be provided"],
     unique: true,
   },
-  eventDate: { type: Date, required: [true, "Event date must be provided"] },
+  eventPrivacy: {
+    type: String,
+    required: [true, "Event privacy must be provided"],
+  },
   timeZone: { type: String, required: [true, "Time zone must be provided"] },
   hostStatus: {
     type: String,

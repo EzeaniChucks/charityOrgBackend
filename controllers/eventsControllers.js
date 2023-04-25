@@ -106,24 +106,6 @@ const joinEvent = async (req, res) => {
       .json({ msg: "event Id and user Id must be present" });
   }
 
-  // const io = req.app.get("socketio");
-  // io.on(eventId, function (data) {
-  //   io.emit("response", `You are connected. I received this data: ${data}`);
-  // });
-
-  // on("connection", function (socket) {
-  //   console.log(`This user ${socket.id} is live from index`);
-  //   socket.on(eventId, function (data) {
-  //     socket.emit(
-  //       "response",
-  //       `You are connected. I received this data: ${data}`
-  //     );
-  //   });
-  //   socket.on("disconnect", function () {
-  //     console.log(`This user ${socket.id} disconnected`);
-  //   });
-  // });
-
   try {
     const memberExists = await Event.findOne({
       _id: eventId,
@@ -195,14 +177,14 @@ const leaveEvent = async (req, res) => {
       _id: eventId,
       members: { $elemMatch: { userId } },
     });
-    if (memberExists) {
+    if (!memberExists) {
       return res.status(400).json({
-        msg: "You are already part of this event. Refresh page to see 'Open Event' button",
+        msg: "You are no longer part of this event. If you wish to be re-added, go to event cover page to join this event",
       });
     }
     const update = await Event.findOneAndUpdate(
       { _id: eventId },
-      { $push: { members: { userId } } },
+      { $pull: { members: { userId } } },
       { new: true }
     );
     if (!update) {
@@ -210,7 +192,7 @@ const leaveEvent = async (req, res) => {
     }
     return res.status(200).json({ msg: "success" });
   } catch (err) {
-    res.status(500).json({ msg: err.message });
+    return res.status(500).json({ msg: err.message });
   }
 };
 
@@ -239,6 +221,7 @@ const fetchEventDetails = async (req, res) => {
     memberRequests: detail.memberRequests,
     totalMemberRequestsAmount: detail.totalMemberRequestsAmount,
     disputeForms: detail.disputeForms,
+    eventPrivacy: event.eventPrivacy,
     completionDeadline: event.completionDeadline,
     depositDeadline: event.depositDeadline,
     eventParticipantNumber: event.members.length,
@@ -576,8 +559,6 @@ const getMembersAndObservers = async (req, res) => {
     return res.status(500).json({ msg: err.message });
   }
 };
-const nominateObserverAsJudge = () => {};
-
 const logDisputeForm = async (req, res) => {
   const {
     disputeLogger,
