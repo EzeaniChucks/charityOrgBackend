@@ -30,7 +30,16 @@ const io = require("socket.io")(server, {
 
 app.set("socketio", io);
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://charityorg.onrender.com",
+      "https://api.flutterwave.com",
+      "http://localhost:3000",
+      "https://charityorg.vercel.app",
+    ],
+  })
+);
 app.use(fileupload({ useTempFiles: true }));
 
 // app.use((req, _, next) => {
