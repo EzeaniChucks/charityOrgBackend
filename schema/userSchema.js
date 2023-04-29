@@ -23,6 +23,8 @@ const userSchema = new mongoose.Schema({
   cardNumber: Number,
   expirationDate: Date,
   cvv: Number,
+  accountBank: String,
+  accountNumber: String,
   verificationToken: String,
   isVerified: { type: Boolean, default: false },
   verified: Date,

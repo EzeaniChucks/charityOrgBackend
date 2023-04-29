@@ -1,5 +1,6 @@
 const path = require("path");
 const axios = require("axios");
+const request = require("request");
 const User = require("../schema/userSchema");
 const Wallet = require("../schema/wallet");
 const WalletTransaction = require("../schema/wallet_transactions");
@@ -100,6 +101,29 @@ const updateWallet = async (userId, amount) => {
       msg: "Something went wrong updating wallet. Contact customer care",
       log: err.message,
     });
+  }
+};
+
+//ENDPOINT
+const getCountryBanks = async (req, res) => {
+  const { country } = req.params;
+
+  const url = `https://api.flutterwave.com/v3/banks/${country}`;
+  try {
+    var options = {
+      method: "GET",
+      url,
+      headers: {
+        Authorization: `Bearer ${process.env.FLUTTERWAVE_V3_SECRET_KEY}`,
+      },
+    };
+    request(options, function (error, response) {
+      if (error) throw new Error(error);
+      const resp = JSON.parse(response.body);
+      return res.status(200).send({ response: resp });
+    });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
   }
 };
 
@@ -208,6 +232,7 @@ const latestTransactions = async (req, res) => {
 
 module.exports = {
   paymentresponse,
+  getCountryBanks,
   getUserBalance,
   validateUserWallet,
   latestTransactions,

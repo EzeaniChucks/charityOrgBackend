@@ -2,6 +2,7 @@ const { readFile, unlink } = require("fs");
 const Event = require("../schema/eventScheme");
 const EventDetail = require("../schema/eventDetails");
 const User = require("../schema/userSchema");
+const Dispute = require("../schema/disputesSchema");
 const Wallet = require("../schema/wallet");
 const {
   createWalletTransactions,
@@ -130,6 +131,42 @@ const joinEvent = async (req, res) => {
   }
 };
 
+const leaveEvent = async (req, res) => {
+  const { eventId, userId } = req.body;
+
+  if (!eventId || !userId) {
+    return res
+      .status(400)
+      .json({ msg: "event Id and user Id must be present" });
+  }
+
+  try {
+    const memberExists = await Event.findOne({
+      _id: eventId,
+      members: { $elemMatch: { userId } },
+    });
+    const observerExists = await Event.findOne({
+      _id: eventId,
+      observers: { $elemMatch: { userId } },
+    });
+    if (!memberExists && !observerExists) {
+      return res.status(400).json({
+        msg: "You are no longer part of this event. If you wish to be re-added, go to event cover page to join this event",
+      });
+    }
+    const update = await Event.findOneAndUpdate(
+      { _id: eventId },
+      { $pull: { members: { userId } } },
+      { new: true }
+    );
+    if (!update) {
+      return res.status(400).json({ msg: "Something went wrong" });
+    }
+    return res.status(200).json({ msg: "success. You left this event." });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
 const joinEventAsObserver = async (req, res) => {
   const { eventId, userId, name } = req.body;
 
@@ -160,39 +197,6 @@ const joinEventAsObserver = async (req, res) => {
     return res.status(200).json({ msg: "success" });
   } catch (err) {
     res.status(500).json({ msg: err.message });
-  }
-};
-
-const leaveEvent = async (req, res) => {
-  const { eventId, userId } = req.body;
-
-  if (!eventId || !userId) {
-    return res
-      .status(400)
-      .json({ msg: "event Id and user Id must be present" });
-  }
-
-  try {
-    const memberExists = await Event.findOne({
-      _id: eventId,
-      members: { $elemMatch: { userId } },
-    });
-    if (!memberExists) {
-      return res.status(400).json({
-        msg: "You are no longer part of this event. If you wish to be re-added, go to event cover page to join this event",
-      });
-    }
-    const update = await Event.findOneAndUpdate(
-      { _id: eventId },
-      { $pull: { members: { userId } } },
-      { new: true }
-    );
-    if (!update) {
-      return res.status(400).json({ msg: "Something went wrong" });
-    }
-    return res.status(200).json({ msg: "success" });
-  } catch (err) {
-    return res.status(500).json({ msg: err.message });
   }
 };
 
@@ -425,8 +429,9 @@ const getmembersRequestList = async (req, res) => {
   try {
     const eventDet = await EventDetail.findOne({ eventId });
     if (!eventDet) {
-      res.status(400).json({ msg: "Something went wrong" });
+      return res.status(400).json({ msg: "Something went wrong" });
     }
+
     const event = await Event.findOne({ _id: eventId });
     return res.status(200).json({
       msg: "success",
@@ -443,11 +448,19 @@ const editMemberRequest = async (req, res) => {
   const { userId, eventId, amount, requestOwnerId, name, description } =
     req.body;
 
-  if (userId !== requestOwnerId) {
-    return res.status(400).json({ msg: "Forbidden request" });
-  }
-
   try {
+    const eventExists = await Event.findOne(
+      { _id: eventId },
+      { observers: { $elemMatch: { userId } } }
+    );
+    // if (!eventExists) {
+    //   return res.status(400).json({ msg: "Unauthorized access" });
+    // }
+
+    if (userId !== requestOwnerId && !eventExists) {
+      return res.status(400).json({ msg: "Forbidden request" });
+    }
+
     const eventDetail = await EventDetail.findOne({ eventId });
     if (!eventDetail) {
       return res
@@ -734,6 +747,7 @@ module.exports = {
   fetchAllEvents,
   fetchEventCreatorDetails,
   joinEvent,
+  leaveEvent,
   joinEventAsObserver,
   fetchEventDetails,
   acceptEventDeposit,
