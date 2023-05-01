@@ -14,6 +14,9 @@ const {
   getMembersAndObservers,
   logDisputeForm,
   leaveEvent,
+  fetchSingleEvent,
+  setEventTimeLimits,
+  setDepositAndCompletionDeadlines,
 } = require("../controllers/eventsControllers");
 const { imageSave } = require("../controllers/imageSaveController");
 const router = express.Router();
@@ -21,6 +24,8 @@ const router = express.Router();
 router.route("/create_event").post(createEvent);
 router.route("/upload-image").post(imageSave);
 router.route("/get_all_events").get(fetchAllEvents);
+router.route("/get_single_event/:eventId").get(fetchSingleEvent);
+
 router.route("/event_creator_details/:creatorId").get(fetchEventCreatorDetails);
 router.route("/join_event").post(joinEvent);
 router.route("/leave_event").post(leaveEvent);
@@ -33,5 +38,9 @@ router.route("/edit_member_request").put(editMemberRequest);
 router.route("/get_member_request_list/:eventId").get(getmembersRequestList);
 router.route("/get_members_and_obervers/:eventId").get(getMembersAndObservers);
 router.route("/log_dispute_form").post(logDisputeForm);
+router.route("/set_event_timelimit").post(setEventTimeLimits);
+router
+  .route("/set_deposit_and_completion_deadlines")
+  .post(setDepositAndCompletionDeadlines);
 
 module.exports = router;

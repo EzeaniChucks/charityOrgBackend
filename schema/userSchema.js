@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema({
   verificationToken: String,
   isVerified: { type: Boolean, default: false },
   verified: Date,
+  isAdmin: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('CharityAppUsers', userSchema);

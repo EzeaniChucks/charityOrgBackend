@@ -42,6 +42,8 @@ const eventDetailsSchema = new mongoose.Schema({
       createdAt: Date,
     },
   ],
+  requestTimeLimit: { type: Date, default: new Date() },
+  disputeTimeLimit: { type: Date, default: new Date() },
 });
 
 module.exports = new mongoose.model("eventDetails", eventDetailsSchema);

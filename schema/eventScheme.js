@@ -13,6 +13,7 @@ const eventSchema = new mongoose.Schema({
   eventPrivacy: {
     type: String,
     required: [true, "Event privacy must be provided"],
+    default: "Public",
   },
   timeZone: { type: String, required: [true, "Time zone must be provided"] },
   hostStatus: {

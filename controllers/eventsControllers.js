@@ -11,6 +11,7 @@ const {
 } = require("../controllers/paymentcontroller");
 const path = require("path");
 const { default: mongoose } = require("mongoose");
+const eventDetails = require("../schema/eventDetails");
 const cloudinary = require("cloudinary").v2;
 
 const createEvent = async (req, res) => {
@@ -69,15 +70,37 @@ const createEvent = async (req, res) => {
   );
 };
 
-const fetchAllEvents = async (_, res) => {
+const fetchAllEvents = async (req, res) => {
   try {
+    if (req.query.eventName) {
+      const allEvents = await Event.find({
+        eventName: { $regex: req.query.eventName, $options: "i" },
+      });
+      if (!allEvents) {
+        return res.status(400).json({ msg: "Something went wrong" });
+      }
+      return res.status(200).json({ msg: "Success", allEvents });
+    }
+
     const allEvents = await Event.find({});
     if (!allEvents) {
       return res.status(400).json({ msg: "Something went wrong" });
     }
     return res.status(200).json({ msg: "Success", allEvents });
   } catch (err) {
-    res.status(500).json(err.message);
+    return res.status(500).json(err.message);
+  }
+};
+const fetchSingleEvent = async (req, res) => {
+  const { eventId } = req.params;
+  try {
+    const event = await Event.find({ _id: eventId });
+    if (!event) {
+      return res.status(400).json({ msg: "Something went wrong" });
+    }
+    return res.status(200).json({ msg: "Success", event });
+  } catch (err) {
+    return res.status(500).json(err.message);
   }
 };
 
@@ -225,6 +248,8 @@ const fetchEventDetails = async (req, res) => {
     memberRequests: detail.memberRequests,
     totalMemberRequestsAmount: detail.totalMemberRequestsAmount,
     disputeForms: detail.disputeForms,
+    requestTimeLimit: detail.requestTimeLimit,
+    disputeTimeLimit: detail.disputeTimeLimit,
     eventPrivacy: event.eventPrivacy,
     completionDeadline: event.completionDeadline,
     depositDeadline: event.depositDeadline,
@@ -742,9 +767,58 @@ const logDisputeForm = async (req, res) => {
   }
 };
 
+const setEventTimeLimits = async (req, res) => {
+  const { requestTimeLimit, disputeTimeLimit, eventId, userId } = req.body;
+  // console.log("req:", requestTimeLimit, "dispute:", disputeTimeLimit);
+  try {
+    const isUserAdmin = await User.findOne({ _id: userId });
+    if (!isUserAdmin) {
+      return res.status(400).json({ msg: "Unavailable user" });
+    }
+    if (!isUserAdmin.isAdmin) {
+      return res.status(400).json({ msg: "Unathorized access" });
+    }
+    const event = await EventDetail.findOne({ eventId });
+    event.requestTimeLimit = new Date(requestTimeLimit);
+    event.disputeTimeLimit = new Date(disputeTimeLimit);
+    await event.save();
+    return res.status(200).json({ msg: "Time limit succesfully set" });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
+
+const setDepositAndCompletionDeadlines = async (req, res) => {
+  const { depositDeadline, completionDeadline, eventId, userId } = req.body;
+  try {
+    // const event = await Event.findOne(
+    //   { _id: eventId },
+    //   { members: { $elemMatch: { userId } } }
+    // );
+    // if (!event.members[0].isCreator) {
+    //   return res.status(403).json({ msg: "Forbidden request" });
+    // }
+
+    const eventproper = await Event.findOne({ _id: eventId });
+    if (!eventproper) {
+      return res.status(400).status({ msg: "Event does not exist" });
+    }
+    eventproper.completionDeadline = new Date(completionDeadline);
+    eventproper.depositDeadline = new Date(depositDeadline);
+    await eventproper.save();
+    return res.status(200).json({
+      msg: "Success",
+      depositDeadline: eventproper.depositAmount,
+      completionDeadline: eventproper.completionDeadline,
+    });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
 module.exports = {
   createEvent,
   fetchAllEvents,
+  fetchSingleEvent,
   fetchEventCreatorDetails,
   joinEvent,
   leaveEvent,
@@ -757,4 +831,6 @@ module.exports = {
   getmembersRequestList,
   getMembersAndObservers,
   logDisputeForm,
+  setEventTimeLimits,
+  setDepositAndCompletionDeadlines,
 };
